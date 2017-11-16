@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<base href="/"/>
+		<base href="<?= $app->uriBase ?>"/>
 		<meta charset="utf-8"/>
 		<link rel="stylesheet" href="css/styles.css"/>
 		<?= $this->head() ?>
