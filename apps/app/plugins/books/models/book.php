@@ -15,7 +15,6 @@ class book extends model {
 //	public  $description;
 //	public  $icon;
 
-
 	protected static $table = 'book';
 
 	public static function getFields() {
@@ -28,7 +27,6 @@ class book extends model {
 
 	public static function rules() {
 		return [
-//			'id' => ['required'],
 			'title' => ['required','trim'],
 			'description' => ['required','trim'],
 			'icon' => ['required','trim'],
@@ -47,9 +45,7 @@ class book extends model {
 			['title', [['varchar','min' => 4, 'max' => 10],'required']],
 
 			[['title', 'icon'], ['varchar', 'icon']],*/
-
 		];
 	}
-
 
 }

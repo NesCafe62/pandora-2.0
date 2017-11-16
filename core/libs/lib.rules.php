@@ -4,6 +4,8 @@ namespace core\libs;
 use Exception;
 use debug;
 
+use console;
+
 class rules {
 
 	private static $rules = [];
@@ -19,8 +21,12 @@ class rules {
 		return [$valid, $message];
 	}
 
-	/* public static function ruleFile($value, $params) {
-	} */
+	public static function ruleFile(&$value, $params) {
+		$value = request::file($params['field_name']);
+		$valid = true;
+		$message = '';
+		return [$valid, $message];
+	}
 
 	public static function ruleEmail($value, $params) {
 		$valid = preg_match('/^[\w\.-_]+@[\w\.-_]+\.[\w\.]+$/', $value);

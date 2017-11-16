@@ -1,0 +1,272 @@
+.user-select(@arg) {
+	-webkit-user-select: @arg;
+	-moz-user-select: @arg;
+	-ms-user-select: @arg;
+	user-select: @arg;
+}
+
+.box-sizing(@arg) {
+	-webkit-box-sizing: @arg;
+	-moz-box-sizing: @arg;
+	box-sizing: @arg;
+}
+
+@cl_background: #172836; // #172734; // #202b2f;
+@cl_text: #C9ECFF; // #d2e4ee;
+
+@cl_caption_background: #253A4B; // #324047;
+// @cl_caption_text: #cae5f4;
+
+@cl_resizing_background: rgba(33, 50, 69, 0.3); // rgba(25, 49, 58, 0.2);
+@cl_resizing_border: rgba(70, 97, 126, 0.4); // rgba(75, 109, 122, 0.4);
+
+@cl_command_line_background: #213141; // #1C2C3C; // #324047;
+
+.debugger-height {
+	clear: both;
+	height: 170px;
+	transition: height 0.2s ease-out 0s;
+
+	&.minimized {
+		height: 24px !important;
+	}
+}
+
+.debugger {
+	background-color: @cl_background;
+	color: @cl_text;
+	bottom: 0;
+	height: 170px;
+	position: fixed;
+	transition: height 0.2s ease-out 0s;
+	width: 100%;
+	z-index: 110;
+
+	.debugger-resizing {
+		background-color: @cl_resizing_background;
+		border-top: 1px solid @cl_resizing_border;
+		bottom: 0;
+		display: none;
+		position: absolute;
+		width: 100%;
+		z-index: 101;
+	}
+
+	&.resizing {
+		.debugger-resizing {
+			display: block;
+		}
+	}
+
+	.debugger-cont {
+
+		.debugger-resize-region {
+			cursor: n-resize;
+			height: 7px;
+			position: absolute;
+			width: 100%;
+			.user-select(none);
+		}
+
+		.debugger-caption {
+			background-color: @cl_caption_background;
+			font-size: 11px;
+			line-height: 24px;
+
+			.title {
+				cursor: default;
+				display: inline-block;
+				padding: 0 2px 0 8px;
+			}
+
+			.button-close, .button-minimize, .button-restore, .button-clear {
+				float: right;
+				width: 24px;
+				height: 24px;
+				position: relative;
+				z-index: 112;
+				.icon {
+					display: block;
+					background: url('../img/debugger-icons.png') no-repeat;
+					margin-top: 4px;
+					margin-left: 4px;
+					opacity: 0.8;
+					width: 16px;
+					height: 16px;
+				}
+				&:hover, &:focus {
+					background-color: #334D62;
+					.icon {
+						opacity: 1;
+					}
+				}
+			}
+
+			.button-clear {
+				float: none;
+				display: inline-block;
+				vertical-align: top;
+				.icon {
+					opacity: 0.6;
+					background-position: -16px -48px;
+				}
+			}
+
+			.button-close .icon {
+				background-position: -16px 0;
+			}
+
+			.button-restore {
+				display: none;
+				.icon {
+					background-position: -16px -16px;
+				}
+			}
+
+			.button-minimize .icon {
+				background-position: -16px -32px;
+			}
+		}
+
+	}
+
+	&.minimized {
+		height: 24px !important;
+		.debugger-cont .debugger-caption {
+			.button-restore {
+				display: block;
+			}
+			.button-minimize {
+				display: none;
+			}
+		}
+	}
+
+
+	.debugger-cont {
+
+		.debugger-content {
+			bottom: 24px;
+			left: 0;
+			top: 24px;
+			width: 100%;
+			overflow-y: auto;
+			position: absolute;
+
+			.messages, pre {
+				font-family: "Consolas", "Courier New", sans-serif;
+			}
+
+			.messages {
+				// color: @cl_text;
+				// font-size: 11px;
+				font-size: 12px;
+				padding: 2px 0;
+
+				.message-line {
+					line-height: 20px;
+					padding: 0 8px;
+
+					.message-type {
+						float: left;
+						margin-right: 7px;
+					}
+
+					.label {
+						display: inline-block;
+						margin-right: 6px;
+					}
+
+					&.message-channel-console .message-type {
+						color: #ff0;
+					}
+
+					&.message-channel-error .message-type {
+						color: #ff5d00;
+					}
+
+					&.message-channel-warning .message-type {
+						color: #ff9000;
+					}
+
+					&.message-channel-notice .message-type {
+						color: #e767ff;
+					}
+
+					&.message-channel-event .message-type {
+						color: #3dffef;
+					}
+
+					.message-wrap {
+						padding-left: 60px;
+
+						.message-text {
+							display: inline-block;
+							min-width: 300px;
+							vertical-align: top;
+							margin-right: 6px;
+						}
+
+						.file {
+							display: inline-block;
+							color: #51b1ff;
+							margin-right: 6px;
+						}
+
+						.line {
+							display: inline-block;
+							color: #d2e4ee;
+							span {
+								color: #46ff44;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		.debugger-command-line {
+			bottom: 0;
+			transition: bottom 0.2s ease-out 0s;
+			// height: 24px;
+			padding-bottom: 2px;
+			width: 100%;
+			position: absolute;
+			// background-color: @cl_command_line_background;
+
+			&.hide {
+				bottom: -24px;
+			}
+
+			.icon-console {
+				color: #93A9B5;
+				cursor: text;
+				display: block;
+				font-size: 19px;
+				line-height: 22px;
+				position: absolute;
+				text-align: center;
+				width: 18px;
+			}
+
+			input {
+				// background-color: transparent;
+				background-color: @cl_command_line_background;
+				color: #EFFAFF;
+				border: 0;
+				.box-sizing(border-box);
+				font-size: 11px;
+				height: 22px;
+				line-height: 22px;
+				padding: 0 0 0 16px;
+				width: 100%;
+
+				/* &:focus {
+					background-color: #213141;
+				} */
+			}
+		}
+
+	}
+
+}

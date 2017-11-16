@@ -14,9 +14,12 @@ class app {
 
 	protected $plugins = [];
 
+	public $uriBase;
+
 	public function __construct($config) {
 		$this->config = $config;
 		$this->layout = $config['layout'] ?? $this->layout;
+		$this->uriBase = trim($config['uriBase'] ?? '', '/').'/';
 	}
 
 	public function getConfig() {
@@ -62,9 +65,9 @@ class app {
 							trigger_error(debug::_('APP_ROUTE_PLUGIN_ROUTE_LOCATION_NOT_SET', $plugin_name, $controller_class, $route_method), E_WARNING);
 							continue;
 						}
-						$location = $location[0];
 						$params_post = $location['post'] ?? [];
 						$params_get = $location['get'] ?? [];
+						$location = $location[0];
 					}
 					$routes[] = [$location, $params_post, $params_get, $route_plugin, $route_controller, $route_method];
 				}
@@ -192,11 +195,33 @@ class app {
 	private $logger;
 
 	// public $scripts = '';
+	protected $jsParams = [];
+	protected $pageScripts = [];
+	protected $pageHeadScripts = [];
+
+	protected $pageStyles = [];
+
 	public $content = '';
 	// public $bodyEnd = '';
 
+	public function jsParam($variable, $value) {
+		$this->jsParams[$variable] = $value;
+	}
+
+	protected function getJsParams() {
+		if (!$this->jsParams) {
+			return '';
+		}
+		return 'var jsParams = '.json_encode($this->jsParams, JSON_UNESCAPED_UNICODE).';';
+	}
+
 	public function head() {
-		return '';
+		$headHtml = $this->pageStyles();
+		$jsParams = $this->getJsParams();
+		if ($jsParams) {
+			$headHtml .= '<script>'.$jsParams.'</script>';
+		}
+		return $headHtml;
 	}
 
 	public function content() {
@@ -213,8 +238,16 @@ class app {
 			// event
 			$profilerName = $this->config['profiler'] ?? '';
 			if ($profilerName) {
-				$profiler = $profilerName::instance(); // this is unsafe better do plugin::getInstance($profilerName);
-				$profiler->renderProfiler();
+				try {
+					$profiler = $profilerName::instance(); // this is unsafe better do plugin::getInstance($profilerName);
+					if (!method_exists($profiler, 'renderProfiler')) {
+						throw new Exception(debug::_('APP_BODY_END_PROFILER_METHOD_NOT_EXIST', $profilerName.'::renderProfiler'), E_WARNING);
+					}
+					$profiler->renderProfiler();
+				} catch (Exception $e) {
+					trigger_error($e->getMessage(), E_USER_WARNING);
+					debug::dumpLog();
+				}
 			} else {
 				debug::dumpLog();
 			}
@@ -222,8 +255,63 @@ class app {
 		return ob_get_clean();
 	}
 
+	public function style($src) {
+		if (!in_array($src, $this->pageStyles)) {
+			$this->pageStyles[] = $src;
+		}
+	}
+
+	public function script($src, $head = false) {
+		if ($head) {
+			if (!in_array($src, $this->pageHeadScripts)) {
+				$this->pageHeadScripts[] = $src;
+			}
+		} else {
+			if (!in_array($src, $this->pageScripts)) {
+				$this->pageScripts[] = $src;
+			}
+		}
+	}
+
+	public function pageStyles() {
+		if (!$this->pageStyles) {
+			return '';
+		}
+		$styles_html = '';
+		foreach ($this->pageStyles as $style) {
+			$styles_html .= '<link rel="stylesheet" href="'.$style.'"/>';
+		}
+		return $styles_html;
+	}
+
+	public function pageScripts() {
+		if (!$this->pageScripts && !$this->pageHeadScripts) {
+			return '';
+		}
+		$scripts_html = '';
+		foreach ($this->pageHeadScripts as $script) {
+			$scripts_html .= '<script src="'.$script.'"></script>';
+		}
+		foreach ($this->pageScripts as $script) {
+			$scripts_html .= '<script src="'.$script.'"></script>';
+		}
+		return $scripts_html;
+	}
+
 	public function getElapsedTime() {
 		return microtime(true) - $this->start_time;
+	}
+
+	private function initProfiler() {
+		if ($this->debug) {
+			$profilerName = $this->config['profiler'] ?? '';
+			if ($profilerName) {
+				$profiler = $profilerName::instance(); // this is unsafe better do plugin::getInstance($profilerName);
+				if (method_exists($profiler, 'beforeAppRender')) {
+					$profiler->beforeAppRender();
+				}
+			}
+		}
 	}
 
 	public function init($params) {
@@ -290,6 +378,10 @@ class app {
 					throw new Exception(debug::_('APP_ROUTE_METHOD_NOT_EXIST', $route_class, $route_method), E_WARNING);
 				}
 				// $route_object->$route_method($arguments);
+
+				$this->initProfiler();
+				// event beforeAppRender
+
 				$this->content = call_user_func_array([$route_object, $route_method], $arguments);
 				if ($this->content === null) {
 					trigger_error(debug::_('APP_ROUTE_METHOD_RETURN_MISSING', $route_class, $route_method), E_USER_WARNING);
@@ -304,6 +396,7 @@ class app {
 		}
 	}
 
+	// todo: move this func to app daemon
 	public function dispatch($socket, $msg) {
 		$msg = json_decode($msg);
 		// $socket;
@@ -312,31 +405,29 @@ class app {
 		// $msg->event;
 		// $data = $msg->data;
 
+		// session::setId($msg->sessionId);
+
 		$this->logger->start();
 
-		/* if ($msg->channel === 'test') {
-			$userSession = session::getInstance($msg->sessionId);
+		$userSession = session::getInstance($msg->sessionId);
+
+		if ($msg->channel === 'test') {
 			$session = $userSession->channel('global');
-			
 			if ($msg->event === 'store.session') {
-			
-				$session->value = $msg->data; // $_SESSION['global_a'] = $msg->data;
-				
+				// $_SESSION['a'] = $msg->data;
+				$session->a = $msg->data;
 			} else if ($msg->event === 'get.session') {
-			
 				// $msg->data;
-				
 				$socket->send(json_encode([
 					'channel' => $msg->channel,
 					'event' => 'updates.session',
 					'data' => [
-						'value' => $session->value ?? '', // $_SESSION['global_a']
-						// 'session_id' => $userSession->getId() // if you want to test correctness of session_id()
+						'session' => $session->a, // $_SESSION,
+						'session_id' => $userSession->getId() // session_id()
 					]
 				], JSON_UNESCAPED_UNICODE));
-				
 			}
-		} */
+		}
 
 		ob_start();
 		$this->logger->dumpLog();
@@ -351,11 +442,8 @@ class app {
 		], JSON_UNESCAPED_UNICODE));
 
 
-		
-		// echo behavior for testing
-		
 		/* $data = $msg->data;
-		$data->text = 'echo: '.$data->text;
+		$data->text = 'hello '.$data->text;
 		$connection->send(json_encode([
 			'channel' => $msg->channel,
 			'event' => $msg->event,
@@ -369,6 +457,13 @@ class app {
 			return;
 		} */
 		if ($this->debug) {
+			debug::addLog([
+				'type' => 'console',
+				'typeLabel' => 'redirect',
+				'message' => 'redirecting to "'.$uri.'"',
+				'file' => '',
+				'line' => ''
+			]);
 			debug::saveLog();
 		}
 		header('Location: '.$uri);
@@ -383,12 +478,12 @@ class app {
 	}
 
 	public function render() {
+		// event beforeLayoutRender
 		$layout_path = $this->path.'/layouts/'.$this->layout;
 		if (!is_file($layout_path)) {
 			throw new Exception( debug::_('APP_RENDER_LAYOUT_FILE_NOT_FOUND', $layout_path), E_WARNING);
 		}
 		include($layout_path);
-		return true;
 	}
 
 }

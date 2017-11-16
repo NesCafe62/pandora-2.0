@@ -48,12 +48,17 @@ class debug {
 		E_ERROR => 'fatal error'
 	];
 
+	public static function getErrorTypeName($type) {
+		return self::$errorTypes[$type] ?? 'error';
+	}
+
 	public static function _out_error($e) {
 		$msg = $e['message'] ?? '';
 		$file = $e['file'] ?? '';
 		$line = $e['line'] ?? '';
 
-		$msg_type = self::$errorTypes[$e['type']] ?? 'error';
+		// $msg_type = self::$errorTypes[$e['type']] ?? 'error';
+		$type_label = $e['typeLabel'] ?? self::$errorTypes[$e['type']] ?? 'error';
 
 		// if (isset($e['label']) && ($e['label'] !== '')) {
 			// $msg = '<span class="label">' . $e['label'] . '</span> ' . $msg;
@@ -71,14 +76,17 @@ class debug {
 			$html .= ' on line <b>'.$line.'</b>';
 		} */
 
-		$html = '<b>'.ucfirst($msg_type).'</b>&nbsp;&nbsp;&nbsp;&nbsp; ';
+		$html = '';
 		if ($file !== '') {
 			$html .= '<b>'.$file.'</b>';
 		}
 		if ($line !== '') {
 			$html .= '&nbsp;&nbsp; on line&nbsp; <b>'.$line.'</b>';
 		}
-		$html .= ': '.$msg;
+		if ($html) {
+			$html = '&nbsp;&nbsp;&nbsp;&nbsp; '.$html;
+		}
+		$html = '<b>'.ucfirst($type_label).'</b>'.$html.':&nbsp;&nbsp;'.$msg;
 
 		return $html;
 	}
@@ -144,7 +152,7 @@ class debug {
 		self::addLog([
 			'type' => $type,
 			'message' => $message,
-			'file' => $file,
+			'file' => trimLeft($file, core::root()),
 			'line' => $line
 		]);
 	}
@@ -274,12 +282,14 @@ class core {
 			// 'apps/',
 			'core/plugins/',
 			'plugins/',
+			'core/widgets/',
 			'widgets/'
 		], [
 			'libs/lib.',
 			// ($plugin_name || $controller_name) ? 'apps/' : 'apps/app.',
 			'core.plugins/',
 			($plugin_name) ? 'plugins/'.$plugin_name.'/plugin.' : 'plugins/',
+			'core.widgets/',
 			'widgets/'.$widget_name.'/widget.'
 		], $path).'.php';
 
@@ -335,18 +345,20 @@ class core {
 			// encoding
 			mb_internal_encoding('UTF-8');
 
+			$dir = str_replace('\\', '/', __DIR__);
+
 			// include functions lib
-			include(__DIR__.'/libs/lib.functions.php');
+			include($dir.'/libs/lib.functions.php');
 
 
-			self::$path_root = trimRight(__DIR__, '/core');
+			self::$path_root = trimRight($dir, '/core');
 
 			// if (!isset($config['path'])) {
 				// $config['path'] = remove_left(getcwd(), self::$path_root.'/');
 			// }
 
 			// $config['path'] = $config['path'] ?? trimLeft(getcwd(), self::$path_root.'/');
-			$app_path = trimLeft(getcwd(), self::$path_root.'/');
+			$app_path = trimLeft(str_replace('\\', '/', getcwd()), self::$path_root.'/');
 
 			// var_dump(self::$path_root);
 			// exit;

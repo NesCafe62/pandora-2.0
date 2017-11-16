@@ -4,10 +4,13 @@ namespace core\libs;
 use Exception;
 
 use console;
+use debug;
 
 class controller {
 
 	protected $plugin;
+
+	protected $app;
 
 	private $viewPath = '';
 
@@ -28,6 +31,7 @@ class controller {
 		$controller_name = $matches[0];
 		$this->viewPath = str_replace('Controller', '', $controller_name).'/';
 		$this->plugin = $plugin;
+		$this->app = $this->plugin->app;
 		if (!isset(self::$instances[$class_name])) {
 			self::$instances[$class_name] = $this;
 		}
@@ -38,10 +42,11 @@ class controller {
 	public static function instance() {
 		$controller_name = get_called_class();
 		if (!isset(self::$instances[$controller_name])) {
-			// $plugin = '';
-			// new $controller_name($plugin);
-			trigger_error(debug::_('CONTROLLER_INSTANCE_WAS_NOT_CREATED', $controller_name), E_WARNING);
-			return null;
+			preg_match('#^(.*)\\\\controllers#', $controller_name, $matches);
+			$plugin_name = $matches[1];
+			new $controller_name($plugin_name::instance());
+			//trigger_error(debug::_('CONTROLLER_INSTANCE_WAS_NOT_CREATED', $controller_name), E_WARNING);
+			//return null;
 		}
 		return self::$instances[$controller_name];
 	}
@@ -51,6 +56,7 @@ class controller {
 	}
 
 	public function render($view, $params = [], $buffering = true) {
+		$params['controller'] = $this;
 		return $this->plugin->render($this->viewPath.$view, $params, $buffering);
 	}
 

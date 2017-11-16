@@ -5,14 +5,17 @@ use console;
 
 use core;
 use Exception;
+use Throwable;
 use debug;
 
 class plugin {
 
-	protected $app = null;
+	public $app = null;
 
-	private $path = '';
-	private $viewPath = '';
+	protected $path = '';
+	protected $viewPath = '';
+
+	protected $config = [];
 
 	public $request;
 
@@ -23,10 +26,17 @@ class plugin {
 		}
 		$this->app = $app;
 		$this->request = $app->request;
-		$this->path = str_replace('\\', '/', $plugin_name).'/'; // preg_replace('#/[^/]*$#', '/',
+		$this->path = str_replace(['core\\plugins', '\\'], ['core.plugins', '/'], $plugin_name).'/'; // preg_replace('#/[^/]*$#', '/',
+		$configFile = $this->path.'config.php';
+		if (is_file($configFile)) {
+			$this->config = require($configFile);
+		}
 		$this->viewPath = $this->path.'views/';
 		self::$instances[$plugin_name] = $this; // careful multiple instances can be created.. and old value will be overwritten (should we check and throw Exception or just not to overwrite instance?)
+		$this->afterConstruct();
 	}
+
+	protected function afterConstruct() { }
 
 	protected static $instances = [];
 
@@ -54,10 +64,12 @@ class plugin {
 		$this->app->redirect($uri);
 	}
 
-	public function render($view, $params, $buffering = true) {
+	public function render($view, $params = [], $buffering = true) {
 		$viewFilename = $this->viewPath.$view.'.php';
 		if (!is_file($viewFilename)) {
-			throw new Exception(debug::_('PLUGIN_RENDER_VIEW_NOT_FOUND', $viewFilename), E_WARNING);
+			// throw new Exception(debug::_('PLUGIN_RENDER_VIEW_NOT_FOUND', $viewFilename), E_WARNING);
+			trigger_error(debug::_('PLUGIN_RENDER_VIEW_NOT_FOUND', $viewFilename), E_USER_WARNING);
+			return '';
 		}
 
 		$app = $this->app;
@@ -68,7 +80,14 @@ class plugin {
 		if ($buffering) {
 			ob_start();
 		}
-		include($viewFilename);
+
+		try {
+			include($viewFilename);
+		} catch (Throwable $e) {
+			ob_get_clean();
+			trigger_error(debug::_('PLUGIN_RENDER_ERROR', $e->getMessage()), E_USER_WARNING);
+			return '';
+		}
 		if ($buffering) {
 			return ob_get_clean();
 		}

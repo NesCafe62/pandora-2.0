@@ -1,0 +1,222 @@
+.debugger-height {
+  clear: both;
+  height: 170px;
+  transition: height 0.2s ease-out 0s;
+}
+.debugger-height.minimized {
+  height: 24px !important;
+}
+.debugger {
+  background-color: #172836;
+  color: #c9ecff;
+  bottom: 0;
+  height: 170px;
+  position: fixed;
+  transition: height 0.2s ease-out 0s;
+  width: 100%;
+  z-index: 110;
+}
+.debugger .debugger-resizing {
+  background-color: rgba(33, 50, 69, 0.3);
+  border-top: 1px solid rgba(70, 97, 126, 0.4);
+  bottom: 0;
+  display: none;
+  position: absolute;
+  width: 100%;
+  z-index: 101;
+}
+.debugger.resizing .debugger-resizing {
+  display: block;
+}
+.debugger .debugger-cont .debugger-resize-region {
+  cursor: n-resize;
+  height: 7px;
+  position: absolute;
+  width: 100%;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.debugger .debugger-cont .debugger-caption {
+  background-color: #253a4b;
+  font-size: 11px;
+  line-height: 24px;
+}
+.debugger .debugger-cont .debugger-caption .title {
+  cursor: default;
+  display: inline-block;
+  padding: 0 2px 0 8px;
+}
+.debugger .debugger-cont .debugger-caption .button-close,
+.debugger .debugger-cont .debugger-caption .button-minimize,
+.debugger .debugger-cont .debugger-caption .button-restore,
+.debugger .debugger-cont .debugger-caption .button-clear {
+  float: right;
+  width: 24px;
+  height: 24px;
+  position: relative;
+  z-index: 112;
+}
+.debugger .debugger-cont .debugger-caption .button-close .icon,
+.debugger .debugger-cont .debugger-caption .button-minimize .icon,
+.debugger .debugger-cont .debugger-caption .button-restore .icon,
+.debugger .debugger-cont .debugger-caption .button-clear .icon {
+  display: block;
+  background: url('../img/debugger-icons.png') no-repeat;
+  margin-top: 4px;
+  margin-left: 4px;
+  opacity: 0.8;
+  width: 16px;
+  height: 16px;
+}
+.debugger .debugger-cont .debugger-caption .button-close:hover,
+.debugger .debugger-cont .debugger-caption .button-minimize:hover,
+.debugger .debugger-cont .debugger-caption .button-restore:hover,
+.debugger .debugger-cont .debugger-caption .button-clear:hover,
+.debugger .debugger-cont .debugger-caption .button-close:focus,
+.debugger .debugger-cont .debugger-caption .button-minimize:focus,
+.debugger .debugger-cont .debugger-caption .button-restore:focus,
+.debugger .debugger-cont .debugger-caption .button-clear:focus {
+  background-color: #334D62;
+}
+.debugger .debugger-cont .debugger-caption .button-close:hover .icon,
+.debugger .debugger-cont .debugger-caption .button-minimize:hover .icon,
+.debugger .debugger-cont .debugger-caption .button-restore:hover .icon,
+.debugger .debugger-cont .debugger-caption .button-clear:hover .icon,
+.debugger .debugger-cont .debugger-caption .button-close:focus .icon,
+.debugger .debugger-cont .debugger-caption .button-minimize:focus .icon,
+.debugger .debugger-cont .debugger-caption .button-restore:focus .icon,
+.debugger .debugger-cont .debugger-caption .button-clear:focus .icon {
+  opacity: 1;
+}
+.debugger .debugger-cont .debugger-caption .button-clear {
+  float: none;
+  display: inline-block;
+  vertical-align: top;
+}
+.debugger .debugger-cont .debugger-caption .button-clear .icon {
+  opacity: 0.6;
+  background-position: -16px -48px;
+}
+.debugger .debugger-cont .debugger-caption .button-close .icon {
+  background-position: -16px 0;
+}
+.debugger .debugger-cont .debugger-caption .button-restore {
+  display: none;
+}
+.debugger .debugger-cont .debugger-caption .button-restore .icon {
+  background-position: -16px -16px;
+}
+.debugger .debugger-cont .debugger-caption .button-minimize .icon {
+  background-position: -16px -32px;
+}
+.debugger.minimized {
+  height: 24px !important;
+}
+.debugger.minimized .debugger-cont .debugger-caption .button-restore {
+  display: block;
+}
+.debugger.minimized .debugger-cont .debugger-caption .button-minimize {
+  display: none;
+}
+.debugger .debugger-cont .debugger-content {
+  bottom: 24px;
+  left: 0;
+  top: 24px;
+  width: 100%;
+  overflow-y: auto;
+  position: absolute;
+}
+.debugger .debugger-cont .debugger-content .messages,
+.debugger .debugger-cont .debugger-content pre {
+  font-family: "Consolas", "Courier New", sans-serif;
+}
+.debugger .debugger-cont .debugger-content .messages {
+  font-size: 12px;
+  padding: 2px 0;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line {
+  line-height: 20px;
+  padding: 0 8px;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line .message-type {
+  float: left;
+  margin-right: 7px;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line .label {
+  display: inline-block;
+  margin-right: 6px;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line.message-channel-console .message-type {
+  color: #ff0;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line.message-channel-error .message-type {
+  color: #ff5d00;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line.message-channel-warning .message-type {
+  color: #ff9000;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line.message-channel-notice .message-type {
+  color: #e767ff;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line.message-channel-event .message-type {
+  color: #3dffef;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line .message-wrap {
+  padding-left: 60px;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line .message-wrap .message-text {
+  display: inline-block;
+  min-width: 300px;
+  vertical-align: top;
+  margin-right: 6px;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line .message-wrap .file {
+  display: inline-block;
+  color: #51b1ff;
+  margin-right: 6px;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line .message-wrap .line {
+  display: inline-block;
+  color: #d2e4ee;
+}
+.debugger .debugger-cont .debugger-content .messages .message-line .message-wrap .line span {
+  color: #46ff44;
+}
+.debugger .debugger-cont .debugger-command-line {
+  bottom: 0;
+  transition: bottom 0.2s ease-out 0s;
+  padding-bottom: 2px;
+  width: 100%;
+  position: absolute;
+}
+.debugger .debugger-cont .debugger-command-line.hide {
+  bottom: -24px;
+}
+.debugger .debugger-cont .debugger-command-line .icon-console {
+  color: #93A9B5;
+  cursor: text;
+  display: block;
+  font-size: 19px;
+  line-height: 22px;
+  position: absolute;
+  text-align: center;
+  width: 18px;
+}
+.debugger .debugger-cont .debugger-command-line input {
+  background-color: #213141;
+  color: #EFFAFF;
+  border: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  font-size: 11px;
+  height: 22px;
+  line-height: 22px;
+  padding: 0 0 0 16px;
+  width: 100%;
+  /* &:focus {
+					background-color: #213141;
+				} */
+}

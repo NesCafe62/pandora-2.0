@@ -13,12 +13,12 @@ class httpRequest {
 		return $_POST[$var] ?? null;
 	}
 
-	/* public function file($var, $form_name = '') {
+	public function file($var, $form_name = '') {
 		if ($form_name) {
-			return $_FILE[$form_name][$var] ?? null;
+			return $_FILES[$form_name][$var] ?? null;
 		}
-		return $_FILE[$var] ?? null;
-	} */
+		return $_FILES[$var] ?? null;
+	}
 
 	// public function files($var, $form_name = '') {
 
@@ -41,9 +41,9 @@ class request {
 		return core::app()->request->post($var, $form_name);
 	}
 
-	/* public static function file($var, $form_name = '') {
+	public static function file($var, $form_name = '') {
 		return core::app()->request->file($var, $form_name);
-	} */
+	}
 
 	// public static function files($var, $form_name = '') {
 

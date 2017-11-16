@@ -17,6 +17,5 @@ use apps\app\widgets\test as widgetTest;
 			<div class="icon"><?= $book->icon ?></div>
 		</div>
 	</div>
-
 <?php endforeach;?>
 </div>

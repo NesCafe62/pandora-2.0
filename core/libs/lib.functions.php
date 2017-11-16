@@ -28,6 +28,22 @@ function trimRight($str, $substr) {
 	return $str;
 }
 
+function deleteLeft($str, $len) {
+	return substr($str, $len);
+}
+
+function deleteRight($str, $len) {
+	return substr($str, 0, strlen($str) - $len);
+}
+
+function cutLeft($str, $len) {
+	return substr($str, 0, $len);
+}
+
+function cutRight($str, $len) {
+	return substr($str, -$len);
+}
+
 function extend($src, $dst) {
 	$is_obj = is_object($src);
 	if (is_object($dst)) {

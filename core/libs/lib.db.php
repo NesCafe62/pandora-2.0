@@ -12,22 +12,69 @@ class db {
 
 	private $connection = null;
 
-	private $connectionType;
+	private $connectionParams = [];
 
-	private $connection_params = [];
+	public const CURRENT_TIMESTAMP = '#_CURRENT_TIMESTAMP';
 
-	private function connectMysql($host, $database, $user, $pass, $port, $encoding, $schema) {
+
+	private static function connectMysql(&$params) {
+		$params = extend($params, [
+			'port' => '',
+			'encoding' => 'utf8',
+			'schema' => '',
+			'tablePrefix' => '',
+		]);
+
+		[
+			'database' => $database,
+			'host' => $host,
+			'port' => $port,
+			'user' => $user,
+			'pass' => $pass,
+			'encoding' => $encoding
+		] = $params;
+
 		$connection_string = 'mysql:host='.$host.';dbname='.$database;
 		if ($port) {
 			$connection_string .= ';port='.$port;
 		}
 		$options = [
-			PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES `'.$encoding.'`; SET sql_mode = (SELECT REPLACE(@@sql_mode,\'ONLY_FULL_GROUP_BY\',\'\'));'
+			PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES `'.$encoding.'`, sql_mode = (SELECT REPLACE(@@sql_mode,\'ONLY_FULL_GROUP_BY\',\'\'));'
 		];
 		return new PDO($connection_string, $user, $pass, $options);
 	}
 
-	private function connectPgsql($host, $database, $user, $pass, $port, $encoding, $schema) {
+	private static function connectSqlite(&$params) {
+		$params = extend($params, [
+			'encoding' => 'utf8',
+			'schema' => '',
+			'tablePrefix' => '',
+		]);
+
+		['database' => $database] = $params;
+
+		$connection_string = 'sqlite:'.$database;
+		return new PDO($connection_string);
+	}
+
+	private static function connectPgsql(&$params) {
+		$params = extend($params, [
+			'port' => '',
+			'encoding' => 'utf8',
+			'schema' => '',
+			'tablePrefix' => '',
+		]);
+
+		[
+			'database' => $database,
+			'schema' => $schema,
+			'host' => $host,
+			'port' => $port,
+			'user' => $user,
+			'pass' => $pass,
+			'encoding' => $encoding
+		] = $params;
+
 		$connection_string = 'pgsql:host='.$host.';dbname='.$database;
 		if ($port) {
 			$connection_string .= ';port='.$port;
@@ -46,25 +93,12 @@ class db {
 	}
 
 	public function __construct($connection_params) {
-		$this->connection_params = $connection_params;
+		$this->connectionParams = $connection_params;
 	}
 
 	public function connect() {
-		[
-			'database' => $database,
-			'type' => $type,
-			'host' => $host,
-			'port' => $port,
-			'schema' => $schema,
-			'user' => $user,
-			'pass' => $pass,
-			'encoding' => $encoding
-		] = extend($this->connection_params, [
-			'type' => 'mysql', // pgsql
-			'port' => '',
-			'schema' => '',
-			'encoding' => 'utf-8'
-		]);
+		$this->connectionParams['type'] = $this->connectionParams['type'] ?? 'mysql';
+		$type = $this->connectionParams['type'];
 
 		$connectionMethod = 'connect'.ucfirst($type);
 
@@ -72,22 +106,27 @@ class db {
 			throw new Exception(debug::_('DB_CONNECTION_UNKNOWN_TYPE', $type), E_WARNING);
 		}
 
-		$connection = $this->$connectionMethod($host, $database, $user, $pass, $port, $encoding, $schema);
+		$connection = self::$connectionMethod($this->connectionParams);
 		$connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 		$this->connection = $connection;
-		$this->connectionType = $type;
 
 		// return true;
 	}
 
+	public function getConnectionParams() {
+		return $this->connectionParams;
+	}
+
 	public function generateQuery($options) { // ['query' => 'select', 'table', 'fields', 'where', 'limit', 'order by', 'group by', 'having']
-		$options['connectionType'] = $this->connectionType;
+		$options['connectionType'] = $this->connectionParams['type'];
+		$options['schema'] = $options['schema'] ?? $this->connectionParams['schema']; //  ?? ''
+		$options['tablePrefix'] = $options['tablePrefix'] ?? $this->connectionParams['tablePrefix']; //  ?? ''
 		return queryGenerator::generate($options);
 	}
 
 	public function lastInsertId($table = '', $keyField = 'id') {
-		if ($this->connectionType === 'pgsql') {
+		if ($this->connectionParams['type'] === 'pgsql') {
 			$sequence_name = $table.'_'.$keyField.'_seq';
 		} else {
 			$sequence_name = null;
@@ -97,14 +136,19 @@ class db {
 	}
 
 	public function query($query, $params = []) {
-		$err = '';
+		// $err = '';
 		$result = false;
+		$preparedQuery = null;
+		$ignoreError = $params['ignoreError'] ?? false;
 		try {
 			console::log(['query' => $query, 'params' => $params]);
 			$preparedQuery = $this->connection->prepare($query);
 			$result = $preparedQuery->execute($params);
-		} catch(PDOException $e) {
-			$err = $e->getMessage();
+		} catch (PDOException $e) {
+			// $err = $e->getMessage();
+			if (!$ignoreError) {
+				trigger_error(debug::_('DATABASE_QUERY_EXECUTE_ERROR', $e->getMessage()), E_USER_WARNING);
+			}
 		}
 
 	//	if ($err) {
@@ -131,7 +175,29 @@ class queryGenerator {
 	}
 
 	public static function getQuote($connectionType) {
-		return ($connectionType == 'mysql') ? '`' : '"';
+		// return ($connectionType == 'mysql') ? '`' : '"';
+		switch ($connectionType) {
+			case 'mysql':
+				return '`';
+			case 'pgsql':
+				return '"';
+			case 'sqlite':
+				return '`';
+			default:
+				return '`';
+		}
+	}
+
+	public static function sqlValue($value) {
+		if ($value === null) {
+			return 'NULL';
+		} else if (is_numeric($value)) {
+			return $value.'';
+		} else if (substr($value, 0, 2) == '#_') {
+			return deleteLeft($value, 2);
+		} else {
+			return '"'.$value.'"';
+		}
 	}
 
 	public static function sqlLimit($limit) {
@@ -155,6 +221,16 @@ class queryGenerator {
 		return $count.(($offset) ? ' OFFSET '.$offset : '');
 	}
 
+	public static function sqlTable($table, $schema, $tablePrefix) {
+		if ($tablePrefix) {
+			$table = $tablePrefix.$table;
+		}
+		if ($schema) {
+			$table = $schema.'.'.$table;
+		}
+		return $table;
+	}
+
 	public static function sqlWhere($where, $level = 0) {
 
 		$params = [];
@@ -175,6 +251,8 @@ class queryGenerator {
 
 			$condOp = (!empty($where['_op'])) ? strtoupper($where['_op']) : 'AND';
 			$condNot = false;
+
+			unset($where['_op']);
 
 			if ($condOp === 'NOT') {
 				$condNot = true;
@@ -306,7 +384,7 @@ class queryGenerator {
 		]); */
 
 		// ------------
-		$sqlTables = $table;
+		$sqlTables = self::sqlTable($table, $options['schema'], $options['tablePrefix']);
 
 		// ------------
 		if (!is_array($fields)) {
@@ -391,7 +469,7 @@ class queryGenerator {
 		]); */
 
 		// ------------
-		$sqlTables = $table;
+		$sqlTables = self::sqlTable($table, $options['schema'], $options['tablePrefix']);
 
 		// ------------
 		$quote = self::getQuote($options['connectionType']);
@@ -461,7 +539,7 @@ class queryGenerator {
 		]); */
 
 		// ------------
-		$sqlTables = $table;
+		$sqlTables = self::sqlTable($table, $options['schema'], $options['tablePrefix']);
 
 		// ------------
 		// $sqlFields = implode(', ', $fields);
