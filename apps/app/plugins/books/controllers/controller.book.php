@@ -1,7 +1,7 @@
 <?php namespace apps\app\plugins\books\controllers;
 
 use apps\app\plugins\books\models\book;
-use core\libs\controller;
+use core\libs\{controller, request};
 use core\widgets\form;
 
 class bookController extends controller {
